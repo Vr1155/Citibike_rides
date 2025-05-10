@@ -1,3 +1,13 @@
+"""
+plot_utils.py – universal plotting helpers for both NYC‑Taxi and Citi Bike projects.
+
+Key upgrades over the taxi‑only version:
+• Works directly with Series that have a DatetimeIndex (Citi Bike pipeline)
+• Keeps backward compatibility with the original `row_id` + `features` signature
+• Lets caller choose column names via `time_col` and `location_col`
+• Adds `title` kwarg so notebooks can set their own figure title cleanly
+"""
+
 from datetime import timedelta
 from typing import Optional
 
@@ -5,136 +15,156 @@ import pandas as pd
 import plotly.express as px
 
 
-def plot_aggregated_time_series(
-    features: pd.DataFrame,
-    targets: pd.Series,
-    row_id: int,
-    predictions: Optional[pd.Series] = None,
-):
-    """
-    Plots the time series data for a specific location from NYC taxi data.
-
-    Args:
-        features (pd.DataFrame): DataFrame containing feature data, including historical ride counts and metadata.
-        targets (pd.Series): Series containing the target values (e.g., actual ride counts).
-        row_id (int): Index of the row to plot.
-        predictions (Optional[pd.Series]): Series containing predicted values (optional).
-
-    Returns:
-        plotly.graph_objects.Figure: A Plotly figure object showing the time series plot.
-    """
-    # Extract the specific location's features and target
+def _legacy_plot(features: pd.DataFrame, targets: pd.Series, row_id: int, predictions: Optional[pd.Series] = None):
+    """Internal helper recreating the original taxi‑style plot (row‑index selection)."""
+    # Extract the location’s row
     location_features = features.iloc[row_id]
     actual_target = targets.iloc[row_id]
 
-    # Identify time series columns (e.g., historical ride counts)
-    time_series_columns = [
-        col for col in features.columns if col.startswith("rides_t-")
-    ]
-    time_series_values = [location_features[col] for col in time_series_columns] + [
-        actual_target
-    ]
+    # Time‑series columns (lagged ride counts)
+    ts_cols = [c for c in features.columns if c.startswith("rides_t-")]
+    ts_values = [location_features[c] for c in ts_cols] + [actual_target]
 
-    # Generate corresponding timestamps for the time series
-    time_series_dates = pd.date_range(
-        start=location_features["pickup_hour"]
-        - timedelta(hours=len(time_series_columns)),
+    # Build date range up to the ‘current’ hour
+    dates = pd.date_range(
+        start=location_features["pickup_hour"] - timedelta(hours=len(ts_cols)),
         end=location_features["pickup_hour"],
         freq="h",
     )
 
-    # Create the plot title with relevant metadata
-    title = f"Pickup Hour: {location_features['pickup_hour']}, Location ID: {location_features['pickup_location_id']}"
-
-    # Create the base line plot
     fig = px.line(
-        x=time_series_dates,
-        y=time_series_values,
+        x=dates,
+        y=ts_values,
         template="plotly_white",
         markers=True,
-        title=title,
+        title=(
+            f"Pickup Hour: {location_features['pickup_hour']}, "
+            f"Location ID: {location_features['pickup_location_id']}"
+        ),
         labels={"x": "Time", "y": "Ride Counts"},
     )
 
-    # Add the actual target value as a green marker
+    # Actual value marker (green)
     fig.add_scatter(
-        x=time_series_dates[-1:],  # Last timestamp
-        y=[actual_target],  # Actual target value
+        x=dates[-1:],
+        y=[actual_target],
         line_color="green",
         mode="markers",
         marker_size=10,
         name="Actual Value",
     )
 
-    # Optionally add the prediction as a red marker
+    # Optional prediction marker (red)
     if predictions is not None:
-        predicted_value = predictions[row_id]
         fig.add_scatter(
-            x=time_series_dates[-1:],  # Last timestamp
-            y=[predicted_value],  # Predicted value
+            x=dates[-1:],
+            y=[predictions.iloc[row_id]],
             line_color="red",
             mode="markers",
             marker_symbol="x",
             marker_size=15,
             name="Prediction",
         )
-    # if predictions is not None:
-    #     fig.add_scatter(
-    #         x=time_series_dates[-1:],  # Last timestamp
-    #         y=predictions[
-    #             predictions["pickup_location_id" == row_id]
-    #         ],  # Predicted value
-    #         line_color="red",
-    #         mode="markers",
-    #         marker_symbol="x",
-    #         marker_size=15,
-    #         name="Prediction",
-    #     )
-
     return fig
 
-def plot_prediction(features: pd.DataFrame, prediction: int):
-    # Identify time series columns (e.g., historical ride counts)
-    time_series_columns = [
-        col for col in features.columns if col.startswith("rides_t-")
-    ]
-    time_series_values = [
-        features[col].iloc[0] for col in time_series_columns
-    ] + prediction["predicted_demand"].to_list()
 
-    # Convert pickup_hour Series to single timestamp
-    pickup_hour = pd.Timestamp(features["pickup_hour"].iloc[0])
+def plot_aggregated_time_series(
+    y_true: pd.Series,
+    y_pred: Optional[pd.Series] = None,
+    *,
+    title: str = "",
+    location_col: str = "pickup_location_id",
+    features: Optional[pd.DataFrame] = None,
+    row_id: Optional[int] = None,
+    time_col: str = "pickup_hour",
+):
+    """Flexible time-series plotter that supports both Citi Bike and legacy taxi data.
 
-    # Generate corresponding timestamps for the time series
-    time_series_dates = pd.date_range(
-        start=pickup_hour - timedelta(hours=len(time_series_columns)),
-        end=pickup_hour,
-        freq="h",
-    )
+    Parameters
+    ----------
+    y_true : pd.Series
+        Truth values (must share index with *y_pred* if provided).
+    y_pred : Optional[pd.Series]
+        Forecast values aligned on the same index as *y_true* (optional).
+    title : str, optional
+        Plot title; auto-generated if blank.
+    location_col : str, optional
+        Name of the location identifier column in *features* (default taxi). Ignored
+        when plotting purely from *y_true*/*y_pred*.
+    features : Optional[pd.DataFrame]
+        Full feature dataframe – needed only for legacy row‑selection mode.
+    row_id : Optional[int]
+        Legacy mode: integer row index to pick from *features*/*targets*.
+    time_col : str, optional
+        Name of timestamp column in *features* (legacy mode only).
+    """
 
-    # Create a DataFrame for the historical data
-    historical_df = pd.DataFrame(
-        {"datetime": time_series_dates, "rides": time_series_values}
-    )
+    # ------- Legacy taxi mode -------------------------------------------------
+    if features is not None and row_id is not None:
+        return _legacy_plot(features, y_true, row_id, y_pred)
 
-    # Create the plot title with relevant metadata
-    title = f"Pickup Hour: {pickup_hour}, Location ID: {features['pickup_location_id'].iloc[0]}"
+    # ------- Modern mode: DatetimeIndex‑based ---------------------------------
+    if not isinstance(y_true.index, pd.DatetimeIndex):
+        raise ValueError(
+            "y_true must have a DatetimeIndex or you must supply features+row_id"
+        )
 
-    # Create the base line plot
+    if y_pred is not None and not y_true.index.equals(y_pred.index):
+        raise ValueError("y_true and y_pred must share the same index")
+
+    # Build figure
     fig = px.line(
-        historical_df,
-        x="datetime",
-        y="rides",
+        x=y_true.index,
+        y=y_true.values,
         template="plotly_white",
         markers=True,
-        title=title,
-        labels={"datetime": "Time", "rides": "Ride Counts"},
+        title=title or "Ride Demand vs Time",
+        labels={"x": "Time", "y": "Ride Counts"},
     )
 
-    # Add prediction point
+    # Add prediction marker if provided (plotly can overlay another line too)
+    if y_pred is not None:
+        fig.add_scatter(
+            x=y_pred.index,
+            y=y_pred.values,
+            mode="lines+markers",
+            line_dash="dash",
+            name="Prediction",
+        )
+    return fig
+
+
+def plot_prediction(
+    features: pd.DataFrame,
+    prediction: pd.DataFrame,
+    *,
+    time_col: str = "pickup_hour",
+    location_col: str = "pickup_location_id",
+):
+    """Plot a single timestamp’s historical lags plus predicted next‑hour demand."""
+
+    ts_cols = [c for c in features.columns if c.startswith("rides_t-")]
+    ts_values = [features[c].iloc[0] for c in ts_cols] + prediction["predicted_demand"].tolist()
+
+    pickup_hour = pd.Timestamp(features[time_col].iloc[0])
+    dates = pd.date_range(start=pickup_hour - timedelta(hours=len(ts_cols)), end=pickup_hour, freq="h")
+
+    fig = px.line(
+        x=dates,
+        y=ts_values,
+        template="plotly_white",
+        markers=True,
+        title=(
+            f"{time_col}: {pickup_hour}, "
+            f"{location_col}: {features[location_col].iloc[0]}"
+        ),
+        labels={"x": "Time", "y": "Ride Counts"},
+    )
+
+    # Prediction marker
     fig.add_scatter(
-        x=[pickup_hour],  # Last timestamp
-        y=prediction["predicted_demand"].to_list(),
+        x=[pickup_hour],
+        y=prediction["predicted_demand"].tolist(),
         line_color="red",
         mode="markers",
         marker_symbol="x",

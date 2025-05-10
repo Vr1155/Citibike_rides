@@ -1,0 +1,30 @@
+name: citibike_hourly_features_pipeline
+
+on:
+  schedule:
+    - cron: "2 * * * *" # Runs every hour (UTC)
+  workflow_dispatch: # Manual trigger support
+
+jobs:
+  run-feature-engineering:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12" # Match your project env
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_feature_pipeline.txt
+
+      - name: Run CitiBike feature pipeline and load to Hopsworks
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+        run: python -m src.feature_pipeline

@@ -1,6 +1,10 @@
 # data folder:
 data/
 .DS_Store
+notebooks/mlruns/
+
+# old notebooks:
+notebooks_nyc_taxi/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -412,38 +412,65 @@ def transform_ts_data_info_features_and_target(
     return features, targets
 
 
+from datetime import datetime
+from typing import Tuple, Optional
+
+import pandas as pd
+
+__all__ = ["split_time_series_data"]
+
+
 def split_time_series_data(
     df: pd.DataFrame,
     cutoff_date: datetime,
     target_column: str,
+    *,
+    time_col: Optional[str] = None,
 ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    """Generic time‑based train/test splitter.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame containing features *and* the target column. Can
+        either have a DatetimeIndex or an explicit timestamp column.
+    cutoff_date : datetime
+        Timestamp dividing train (<) and test (>=) sets.
+    target_column : str
+        Name of the target column to separate from the features.
+    time_col : str, optional
+        Name of the timestamp column **if the DataFrame does not use a
+        DatetimeIndex**. Defaults to `None`, meaning "use the index".
+
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]
+        X_train, y_train, X_test, y_test
     """
-    Splits a time series DataFrame into training and testing sets based on a cutoff date.
 
-    Args:
-        df (pd.DataFrame): The input DataFrame containing the time series data.
-        cutoff_date (datetime): The date used to split the data into training and testing sets.
-        target_column (str): The name of the target column to separate from the features.
+    # --- Determine the time series -----------------------------------------
+    if time_col is None:
+        if not isinstance(df.index, pd.DatetimeIndex):
+            raise ValueError(
+                "DataFrame index is not DatetimeIndex; supply `time_col` instead."
+            )
+        ts = df.index
+    else:
+        if time_col not in df.columns:
+            raise KeyError(f"Column '{time_col}' not found in DataFrame.")
+        ts = pd.to_datetime(df[time_col])
 
-    Returns:
-        Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
-            - X_train (pd.DataFrame): Training features.
-            - y_train (pd.Series): Training target values.
-            - X_test (pd.DataFrame): Testing features.
-            - y_test (pd.Series): Testing target values.
-    """
-    # Split the data into training and testing sets based on the cutoff date
-    train_data = df[df["pickup_hour"] < cutoff_date].reset_index(drop=True)
-    test_data = df[df["pickup_hour"] >= cutoff_date].reset_index(drop=True)
+    # --- Build boolean masks ------------------------------------------------
+    train_mask = ts < cutoff_date
+    test_mask = ~train_mask
 
-    # Separate features (X) and target (y) for both training and testing sets
-    X_train = train_data.drop(columns=[target_column])
-    y_train = train_data[target_column]
-    X_test = test_data.drop(columns=[target_column])
-    y_test = test_data[target_column]
+    # --- Slice --------------------------------------------------------------
+    X_train = df.loc[train_mask].drop(columns=[target_column])
+    y_train = df.loc[train_mask, target_column]
+    X_test = df.loc[test_mask].drop(columns=[target_column])
+    y_test = df.loc[test_mask, target_column]
 
     return X_train, y_train, X_test, y_test
-
 
 def fetch_batch_raw_data(
     from_date: Union[datetime, str], to_date: Union[datetime, str]
