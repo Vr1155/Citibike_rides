@@ -26,3 +26,50 @@ def build_features_for_citibike(start_time, end_time):
     )
 
     return add_lag_features_and_calendar_flags(df_full)
+
+# src/feature_utils.py
+
+def add_lag_features_and_calendar_flags(df):
+    import numpy as np
+    import holidays
+
+    df = df.sort_values(["start_station_id", "start_hour"])
+
+    for lag in [1, 24, 168, 672]:
+        df[f"lag_{lag}"] = (
+            df.groupby("start_station_id")["rides"]
+            .shift(lag)
+        )
+
+    df["rollmean_24"] = (
+        df.groupby("start_station_id")["rides"]
+        .shift(1)
+        .rolling(window=24)
+        .mean()
+    )
+    df["rollmean_168"] = (
+        df.groupby("start_station_id")["rides"]
+        .shift(1)
+        .rolling(window=168)
+        .mean()
+    )
+
+    df["hour"] = df["start_hour"].dt.hour
+    df["dow"] = df["start_hour"].dt.dayofweek
+    df["doy"] = df["start_hour"].dt.dayofyear
+
+    df["sin_hour"] = np.sin(2 * np.pi * df["hour"] / 24)
+    df["cos_hour"] = np.cos(2 * np.pi * df["hour"] / 24)
+    df["sin_dow"] = np.sin(2 * np.pi * df["dow"] / 7)
+    df["cos_dow"] = np.cos(2 * np.pi * df["dow"] / 7)
+
+    df["is_weekend"] = df["dow"] >= 5
+    us_holidays = holidays.US(years=[2023, 2024])
+    df["is_holiday"] = df["start_hour"].dt.date.astype("datetime64").isin(us_holidays)
+
+    df["target_t_plus_1"] = (
+        df.groupby("start_station_id")["rides"]
+        .shift(-1)
+    )
+
+    return df
