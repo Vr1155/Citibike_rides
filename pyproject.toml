@@ -8,11 +8,11 @@ dependencies = [
   "hopsworks==3.0.5",
   "confluent-kafka",
   "packaging",
-  "pandas",
+  "pandas==1.5.3",        # ✅ binary-safe
   "pyarrow",
   "python-dotenv",
   "requests",
   "holidays",
-  "numpy",
+  "numpy==1.24.4",        # ✅ binary-safe
   "scikit-learn==1.5.2"
 ]
