@@ -2,8 +2,8 @@ name: citibike_model_training_pipeline
 
 on:
   schedule:
-    - cron: "0 0 * * 1" # Runs every Monday at midnight UTC
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+    - cron: "0 0 * * 1" # Every Monday at midnight UTC
+  workflow_dispatch: # Manual trigger from GitHub Actions UI
 
 jobs:
   run-training:
@@ -21,10 +21,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install .
 
       - name: Run model training and push to Hopsworks if improved
         env:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
-        run: python -m pipelines.model_training_pipeline
+        run: |
+          python -m src.model_training_pipeline

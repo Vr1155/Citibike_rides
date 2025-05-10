@@ -33,16 +33,14 @@ add_feature_average_rides_last_4_weeks = FunctionTransformer(
 
 # Custom transformer to add temporal features
 class TemporalFeatureEngineer(BaseEstimator, TransformerMixin):
-
     def fit(self, X, y=None):
         return self
 
     def transform(self, X, y=None):
         X_ = X.copy()
-        X_["hour"] = X_["pickup_hour"].dt.hour
-        X_["day_of_week"] = X_["pickup_hour"].dt.dayofweek
-
-        return X_.drop(columns=["pickup_hour", "pickup_location_id"])
+        X_["hour"] = X_["start_hour"].dt.hour
+        X_["day_of_week"] = X_["start_hour"].dt.dayofweek
+        return X_.drop(columns=["start_hour", "start_station_id"])
 
 
 # Instantiate the temporal feature engineer

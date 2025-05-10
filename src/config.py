@@ -27,14 +27,14 @@ for directory in [
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME")
 
-FEATURE_GROUP_NAME = "time_series_hourly_feature_group"
+FEATURE_GROUP_NAME = "bike_hourly_fg"
 FEATURE_GROUP_VERSION = 1
 
-FEATURE_VIEW_NAME = "time_series_hourly_feature_view"
+FEATURE_VIEW_NAME = "bike_hourly_fv"
 FEATURE_VIEW_VERSION = 1
 
 
-MODEL_NAME = "taxi_demand_predictor_next_hour"
+MODEL_NAME = "citibike_demand_predictor_next_hour"
 MODEL_VERSION = 1
 
-FEATURE_GROUP_MODEL_PREDICTION = "taxi_hourly_model_prediction"
+FEATURE_GROUP_MODEL_PREDICTION = "bike_demand_predictions"

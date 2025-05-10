@@ -4,7 +4,7 @@ from hsml.schema import Schema
 from sklearn.metrics import mean_absolute_error
 
 import src.config as config
-from src.data_utils import transform_ts_data_info_features_and_target
+from src.data_utils import transform_ts_data_info_features_and_target_bike
 from src.inference import (
     fetch_days_data,
     get_hopsworks_project,
@@ -22,9 +22,10 @@ ts_data = fetch_days_data(180)
 # Step 2: Transform to lag-based supervised learning data
 # ─────────────────────────────────────────────────────────────
 print("🧪 Transforming time-series data into supervised features/target...")
-features, targets = transform_ts_data_info_features_and_target(
+features, targets = transform_ts_data_info_features_and_target_bike(
     ts_data, window_size=24 * 28, step_size=23
 )
+
 
 # ─────────────────────────────────────────────────────────────
 # Step 3: Load Best Hyperparameters (from Optuna)
