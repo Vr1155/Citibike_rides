@@ -2,11 +2,10 @@
 name = "citibike_feature_pipeline"
 version = "0.1.0"
 description = "Feature engineering pipeline for CitiBike"
-requires-python = ">=3.8,<3.12"
+requires-python = ">=3.8,<3.10"
 
 dependencies = [
-  "hopsworks==3.7.1",        # ✅ Available on PyPI
-  "hsfs==3.7.1",             # ✅ Available and compatible
+  "hopsworks==3.0.5",
   "confluent-kafka",
   "packaging",
   "pandas",
