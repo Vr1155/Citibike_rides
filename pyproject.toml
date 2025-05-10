@@ -5,12 +5,13 @@ description = "Feature engineering pipeline for CitiBike"
 requires-python = ">=3.8,<3.12"
 
 dependencies = [
-  "hopsworks==3.0.5",           # Includes internal hsfs dependency
-  "confluent-kafka",            # For future extensibility
+  "hopsworks==3.7.1",        # ✅ Available on PyPI
+  "hsfs==3.7.1",             # ✅ Available and compatible
+  "confluent-kafka",
   "packaging",
   "pandas",
   "pyarrow",
-  "python-dotenv",              # Optional, for local `.env` use
+  "python-dotenv",
   "requests",
   "holidays",
   "numpy",
