@@ -1,12 +1,14 @@
 # src/feature_utils.py
 
 def build_features_for_citibike(start_time, end_time, parquet_path):
-    import os
     import pandas as pd
 
-    # Read the pre-downloaded parquet file (path passed in)
-    df = pd.read_parquet(parquet_path)
+    # Load only needed columns (optional optimization)
+    df = pd.read_parquet(parquet_path, columns=["started_at", "start_station_id"])
+
+    # Convert timestamps and slice to only December 2023
     df["start_time"] = pd.to_datetime(df["started_at"]).dt.floor("H")
+    df = df[df["start_time"].dt.month == 12]  # Only December 2023
     df = df[(df["start_time"] >= start_time) & (df["start_time"] < end_time)]
 
     hourly_df = (
