@@ -1,18 +1,11 @@
 # src/feature_utils.py
 
-def build_features_for_citibike(start_time, end_time):
+def build_features_for_citibike(start_time, end_time, parquet_path):
     import os
     import pandas as pd
-    from hops import hdfs
 
-    os.makedirs("data/processed/2023", exist_ok=True)
-    local_path = "data/processed/2023/citibike_2023_all.parquet"
-
-    if not os.path.exists(local_path):
-        print("📥 Downloading citibike_2023_all.parquet from Hopsworks Dataset storage...")
-        hdfs.download("Resources/citibike/citibike_2023_all.parquet", local_path)
-
-    df = pd.read_parquet(local_path)
+    # Read the pre-downloaded parquet file (path passed in)
+    df = pd.read_parquet(parquet_path)
     df["start_time"] = pd.to_datetime(df["started_at"]).dt.floor("H")
     df = df[(df["start_time"] >= start_time) & (df["start_time"] < end_time)]
 
