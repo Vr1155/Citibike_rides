@@ -38,24 +38,31 @@ logger.info(f"Current datetime (UTC): {current_date}")
 logger.info(f"Fetching ride data from {fetch_data_from} to {fetch_data_to}")
 
 # ─────────────────────────────────────────────────────────────
-# Step 2: Run Feature Engineering
+# Step 2: Login to Hopsworks and download .parquet from dataset
+# ─────────────────────────────────────────────────────────────
+project = hopsworks.login(project=HOPSWORKS_PROJECT_NAME, api_key_value=HOPSWORKS_API_KEY)
+dataset_api = project.get_dataset_api()
+
+local_parquet_path = "data/processed/2023/citibike_2023_all.parquet"
+os.makedirs("data/processed/2023", exist_ok=True)
+
+if not os.path.exists(local_parquet_path):
+    logger.info("Downloading citibike_2023_all.parquet from Hopsworks Dataset storage...")
+    dataset_api.download("Resources/citibike/citibike_2023_all.parquet", local_path=local_parquet_path)
+    logger.info("Download complete.")
+
+# ─────────────────────────────────────────────────────────────
+# Step 3: Run Feature Engineering
 # ─────────────────────────────────────────────────────────────
 logger.info("Building features for CitiBike...")
-ts_data = build_features_for_citibike(fetch_data_from, fetch_data_to)
+ts_data = build_features_for_citibike(fetch_data_from, fetch_data_to, parquet_path=local_parquet_path)
 logger.info(f"Generated time-series features: {ts_data.shape[0]} rows, {ts_data.shape[1]} columns")
 
 # ─────────────────────────────────────────────────────────────
-# Step 3: Connect to Hopsworks and Feature Store
+# Step 4: Connect to Feature Store and Insert Features
 # ─────────────────────────────────────────────────────────────
-logger.info("Logging into Hopsworks...")
-project = hopsworks.login(project=HOPSWORKS_PROJECT_NAME, api_key_value=HOPSWORKS_API_KEY)
+logger.info("Connecting to the Feature Store...")
 feature_store = project.get_feature_store()
-
-logger.info(f"Connected to project '{HOPSWORKS_PROJECT_NAME}'")
-
-# ─────────────────────────────────────────────────────────────
-# Step 4: Write to Feature Group
-# ─────────────────────────────────────────────────────────────
 logger.info(f"Inserting into Feature Group: {FEATURE_GROUP_NAME} (v{FEATURE_GROUP_VERSION})...")
 feature_group = feature_store.get_feature_group(
     name=FEATURE_GROUP_NAME,
