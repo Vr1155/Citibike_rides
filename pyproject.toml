@@ -1,0 +1,18 @@
+[project]
+name = "citibike_feature_pipeline"
+version = "0.1.0"
+description = "Feature engineering pipeline for CitiBike"
+requires-python = ">=3.8,<3.12"
+
+dependencies = [
+  "hopsworks==3.0.5",           # Includes internal hsfs dependency
+  "confluent-kafka",            # For future extensibility
+  "packaging",
+  "pandas",
+  "pyarrow",
+  "python-dotenv",              # Optional, for local `.env` use
+  "requests",
+  "holidays",
+  "numpy",
+  "scikit-learn==1.5.2"
+]
