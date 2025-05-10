@@ -1,5 +1,6 @@
 confluent-kafka
-hopsworks
+hopsworks==3.0.5
+hsfs==3.0.5
 packaging
 pandas
 pyarrow
@@ -7,5 +8,4 @@ python-dotenv
 requests
 holidays
 numpy
-hsfs
 scikit-learn==1.5.2
