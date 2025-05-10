@@ -48,7 +48,7 @@ os.makedirs("data/processed/2023", exist_ok=True)
 
 if not os.path.exists(local_parquet_path):
     logger.info("Downloading citibike_2023_all.parquet from Hopsworks Dataset storage...")
-    dataset_api.download("Resources/citibike/citibike_2023_all.parquet", local_path=local_parquet_path)
+    dataset_api.download("Resources/citibike/citibike_2023_all.parquet/citibike_2023_all.parquet", local_path=local_parquet_path)
     logger.info("Download complete.")
 
 # ─────────────────────────────────────────────────────────────
