@@ -2,17 +2,17 @@
 name = "citibike_feature_pipeline"
 version = "0.1.0"
 description = "Feature engineering pipeline for CitiBike"
-requires-python = ">=3.8,<3.10"
+requires-python = ">=3.9,<3.12"
 
 dependencies = [
-  "hopsworks==3.0.5",
+  "hopsworks==4.2.1",
   "confluent-kafka",
   "packaging",
-  "pandas==1.5.3",        # ✅ binary-safe
+  "pandas==1.5.3",
   "pyarrow",
   "python-dotenv",
   "requests",
   "holidays",
-  "numpy==1.24.4",        # ✅ binary-safe
+  "numpy==1.24.4",
   "scikit-learn==1.5.2"
 ]
