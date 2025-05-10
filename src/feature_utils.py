@@ -2,7 +2,6 @@
 
 def build_features_for_citibike(start_time, end_time):
     import pandas as pd
-    from src.data_utils import add_lag_features_and_calendar_flags
 
     df = pd.read_parquet("data/processed/2023/citibike_2023_all.parquet")
     df["start_time"] = pd.to_datetime(df["started_at"]).dt.floor("H")
@@ -27,7 +26,6 @@ def build_features_for_citibike(start_time, end_time):
 
     return add_lag_features_and_calendar_flags(df_full)
 
-# src/feature_utils.py
 
 def add_lag_features_and_calendar_flags(df):
     import numpy as np
