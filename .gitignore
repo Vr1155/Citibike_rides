@@ -1,5 +1,8 @@
 # data folder:
-data/
+# Ignore everything under data/processed...
+data/*
+
+
 .DS_Store
 notebooks/mlruns/
 

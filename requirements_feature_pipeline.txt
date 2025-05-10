@@ -5,4 +5,7 @@ pandas
 pyarrow
 python-dotenv
 requests
+holidays
+numpy
+hsfs
 scikit-learn==1.5.2
